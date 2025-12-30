@@ -110,6 +110,27 @@
       filter: blur(8px);
       transition: filter 0.3s ease;
     }
+
+    * {
+      -webkit-user-select: none;  /* Chrome, Safari, Android */
+      -moz-user-select: none;     /* Firefox */
+      -ms-user-select: none;      /* IE/Edge */
+      user-select: none;          /* Standard */
+      -webkit-tap-highlight-color: transparent; /* Rimuove il blu su tap mobile */
+    }
+
+    /* Riabilita la selezione SOLO dove serve (es. input, textarea, o barre di ricerca future) */
+    input, textarea, [contenteditable], .selectable {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+
+    /* Opzionale: disabilita il menu contestuale su pressione lunga (mobile) */
+    * {
+      -webkit-touch-callout: none;
+    }
   </style>
 </head>
 <body>

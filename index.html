@@ -102,6 +102,50 @@
     .modal-small .error { color: #ff4444; font-size: 0.9rem; margin-top: 0.5rem; display: none; }
     .close-modal { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--text-alt); font-size: 1.8rem; cursor: pointer; opacity: 0.8; }
     .close-modal:hover { opacity: 1; }
+
+    /* Trigger espansione */
+    .expand-trigger {
+      margin: 2rem auto 0;
+      width: 48px;
+      height: 48px;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .expand-trigger:hover {
+      opacity: 1;
+      transform: scale(1.1);
+      filter: drop-shadow(0 0 10px rgba(200, 0, 255, 0.6));
+    }
+
+    /* Contenuto espanso */
+    .expanded-content {
+      display: none;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(200, 0, 255, 0.3);
+      min-height: 200px;
+    }
+
+    /* Stato espanso del modal */
+    .modal.expanded {
+      max-width: 90vw !important;
+      width: 90vw;
+      max-height: 90vh;
+      height: auto;
+      padding: 2.5rem;
+      border-radius: 24px;
+      overflow-y: auto;
+    }
+    .modal.expanded .expanded-content {
+      display: block;
+    }
+    .modal.expanded .expand-trigger svg {
+      transform: rotate(270deg) !important; /* freccia verso l'alto quando espanso */
+    }
     
     /* Sfocatura sfondo quando modal TON Connect è aperto */
     body.ton-modal-open .container,
@@ -170,7 +214,7 @@
 
   <!-- Modal Dettaglio -->
   <div id="auctionModal" class="modal-overlay">
-    <div class="modal">
+    <div class="modal" id="detailModal">
       <button class="close-modal">×</button>
       <h2 id="modalUsername"></h2>
       <div class="min-bid">
@@ -178,6 +222,16 @@
         <div style="font-size:0.9rem;opacity:0.8;margin-top:0.4rem;">(~ $<span id="modalMinUsd"></span>)</div>
       </div>
       <button id="openBidModal" class="btn">Place Bid</button>
+
+      <!-- Contenitore per la freccia (verrà riempito con JS) -->
+      <div class="expand-trigger" id="expandTrigger">
+        <!-- SVG inserito via JavaScript -->
+      </div>
+
+      <!-- Contenuto espanso -->
+      <div class="expanded-content" id="expandedContent">
+        <p style="color: var(--text-alt); margin: 2rem 0 1rem;">Caricamento informazioni aggiuntive...</p>
+      </div>
     </div>
   </div>
 
@@ -195,12 +249,23 @@
 
   <script>
     const TON_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19.012 9.201L12.66 19.316a.857.857 0 0 1-1.453-.005L4.98 9.197a1.8 1.8 0 0 1-.266-.943a1.856 1.856 0 0 1 1.882-1.826h10.817c1.033 0 1.873.815 1.873 1.822a1.8 1.8 0 0 1-.274.951M6.51 8.863l4.633 7.144V8.143H6.994c-.48 0-.694.317-.484.72m6.347 7.144l4.633-7.144c.214-.403-.004-.72-.484-.72h-4.149z"/></svg>`;
+    const ARROW_SVG = `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" fill="#ffffff" width="48" height="48" style="transform: rotate(90deg);">
+      <path d="M27.2,24,16.6,34.6a1.9,1.9,0,0,0,.2,3,2.1,2.1,0,0,0,2.7-.2l11.9-12a1.9,1.9,0,0,0,0-2.8l-11.9-12a2.1,2.1,0,0,0-2.7-.2,1.9,1.9,0,0,0-.2,3Z"></path>
+    </svg>`;
     const API_URL = 'https://tonapi.io/v2/dns/auctions?tld=t.me';
     const MAX_ROWS = 500;
     const TON_TO_USD = 1.68; // Prezzo attuale TON (29 Dic 2025)
     let auctions = [];
     let sortColumn = 'bid';
     let sortAsc = false;
+
+    // Inserisci la freccia SVG al caricamento della pagina
+    document.addEventListener('DOMContentLoaded', () => {
+      const trigger = document.getElementById('expandTrigger');
+      if (trigger) {
+        trigger.innerHTML = ARROW_SVG;
+      }
+    });
 
     // TON Connect corretto dal CDN
     const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
@@ -271,6 +336,31 @@
     tonConnectUI.onModalStateChange(state => {
       if (!state.status || state.status === 'closed') {
         document.body.classList.remove('ton-modal-open');
+      }
+    });
+
+    // Gestione espansione modal dettaglio
+    const detailModal = document.getElementById('detailModal');
+    const expandTrigger = document.getElementById('expandTrigger');
+    const expandedContent = document.getElementById('expandedContent');
+
+    expandTrigger.addEventListener('click', () => {
+      detailModal.classList.toggle('expanded');
+      
+      // Opzionale: carica info extra solo al primo click
+      if (detailModal.classList.contains('expanded') && expandedContent.children.length === 1) {
+        // Qui potrai fare una fetch per caricare info extra sull'username
+        // Esempio placeholder:
+        expandedContent.innerHTML = `
+          <h3 style="color:var(--text); margin-bottom:1rem;">Informazioni su @${window.currentAuction.username}</h3>
+          <p style="color:var(--text-alt); line-height:1.6;">
+            • Dominio: ${window.currentAuction.domain}<br>
+            • Offerta attuale: ${formatTON(window.currentAuction.currentBidTon)} TON<br>
+            • Storico offerte: (da implementare)<br>
+            • Proprietario attuale: (da API)<br><br>
+            Altre informazioni in arrivo...
+          </p>
+        `;
       }
     });
 
@@ -358,7 +448,11 @@
           document.getElementById('bidModalUsername').textContent = '@' + username;
           document.getElementById('bidModalMin').textContent = formatTON(minNextBidTon);
           window.currentAuction = { username, domain: fullDomain, minNextBidTon, currentBidTon: ton };
-          document.getElementById('auctionModal').classList.add('active');
+          const auctionModalOverlay = document.getElementById('auctionModal');
+          auctionModalOverlay.classList.add('active');
+          // Resetta lo stato espanso ogni volta che apri il modal
+          detailModal.classList.remove('expanded');
+          expandedContent.innerHTML = '<p style="color: var(--text-alt); margin: 2rem 0 1rem;">Caricamento informazioni aggiuntive...</p>';
         });
 
         tbody.appendChild(row);

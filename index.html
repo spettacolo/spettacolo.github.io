@@ -178,6 +178,39 @@
       manifestUrl: 'https://tonconnect-sdk-demo-dapp.vercel.app/tonconnect-manifest.json', // Cambia con il tuo quando pronto
     });
 
+    tonConnectUI.uiOptions = {
+      uiPreferences: {
+        theme: TON_CONNECT_UI.THEME.DARK,
+        colorsSet: {
+          [TON_CONNECT_UI.THEME.DARK]: {
+            accent: '#c800ff',
+            connectButton: {
+              background: 'transparent',
+              foreground: '#c800ff'
+            },
+            background: {
+              primary: '#18001e',
+              secondary: '#2a0038',
+              segment: '#3d0052',
+              tint: 'rgba(200, 0, 255, 0.1)',
+              qr: '#ffffff'
+            },
+            text: {
+              primary: '#ffffff',
+              secondary: 'rgba(255, 255, 255, 0.7)'
+            },
+            icon: {
+              primary: '#c800ff',
+              secondary: 'rgba(200, 0, 255, 0.6)',
+              tertiary: 'rgba(200, 0, 255, 0.3)',
+              success: '#4caf50',
+              error: '#ff4444'
+            }
+          }
+        }
+      }
+    };
+
     tonConnectUI.onStatusChange(wallet => {
       document.querySelectorAll('.btn').forEach(btn => {
         if (btn.dataset.tonconnect === 'true') {

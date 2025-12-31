@@ -58,9 +58,40 @@
     .auctions h2 { font-size: 1.5rem; font-weight: 400; color: var(--text); }
     .sort-btn { background: transparent; border: 1px solid var(--text-alt); color: var(--text-alt); padding: 0.5rem 1rem; font-family: inherit; font-size: 0.9rem; cursor: pointer; transition: all 0.3s; }
     .sort-btn:hover { box-shadow: var(--border-glow); }
-    table { width: 100%; border-collapse: collapse; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(200, 0, 255, 0.2); }
-    th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(200, 0, 255, 0.1); font-size: 0.95rem; }
-    th { background: rgba(200, 0, 255, 0.1); color: var(--accent); font-weight: 400; cursor: pointer; user-select: none; }
+    /*table { width: 100%; border-collapse: collapse; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(200, 0, 255, 0.2); }*/
+    table { 
+      width: 100%; 
+      /* Modifica fondamentale per i bordi arrotondati */
+      border-collapse: separate; 
+      border-spacing: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      
+      background: rgba(0, 0, 0, 0.5); 
+      border: 1px solid rgba(200, 0, 255, 0.2); 
+    }
+    /*th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(200, 0, 255, 0.1); font-size: 0.95rem; }
+    th { background: rgba(200, 0, 255, 0.1); color: var(--accent); font-weight: 400; cursor: pointer; user-select: none; }*/
+    th, td { 
+      padding: 1rem; 
+      text-align: left; 
+      /* Cambia il bordo in modo che non si sovrapponga a quello della tabella */
+      border-bottom: 1px solid rgba(200, 0, 255, 0.1); 
+      font-size: 0.95rem; 
+    }
+
+    /* Rimuove il bordo dall'ultima riga per non sporcare la curva inferiore */
+    table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    th { 
+      background: rgba(200, 0, 255, 0.1); 
+      color: var(--accent); 
+      font-weight: 400; 
+      cursor: pointer; 
+      user-select: none; 
+    }
     th:hover { background: rgba(200, 0, 255, 0.2); }
     .username { color: var(--text); text-decoration: none; font-weight: 500; word-break: break-all; }
     .username:hover { text-shadow: var(--glow); }
@@ -201,7 +232,7 @@
     }
 
     /* Tabella history uniforme */
-    .history-table {
+    /*.history-table {
       width: 100%;
       font-size: 0.75rem;
       border-collapse: collapse;
@@ -220,8 +251,49 @@
     .history-table td {
       padding: 8px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
-      -webkit-user-select: text; /* Permette di selezionare gli indirizzi */
+      -webkit-user-select: text; // Permette di selezionare gli indirizzi
       user-select: text;
+    }*/
+    /* Tabella history uniforme e curva */
+    .history-table {
+      width: 100%;
+      font-size: 0.75rem;
+      /* 1. Cambia collapse in separate per permettere la curvatura */
+      border-collapse: separate; 
+      border-spacing: 0;
+      
+      /* 2. Applica il raggio e nascondi ciò che esce dai bordi */
+      border-radius: 12px; 
+      overflow: hidden; 
+      
+      text-align: left;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0,0,0,0.3);
+      
+      /* 3. Aggiungi un bordo esterno per definire meglio la forma */
+      border: 1px solid rgba(200, 0, 255, 0.3);
+      margin-bottom: 1rem;
+    }
+
+    .history-table th {
+      padding: 10px 8px;
+      /* Sfondo leggero per distinguere la testata nel nuovo raggio */
+      background: rgba(200, 0, 255, 0.1);
+      border-bottom: 1px solid var(--text);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .history-table td {
+      padding: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    /* 4. Rimuovi il bordo dall'ultima riga per non sporcare l'angolo curvo in basso */
+    .history-table tr:last-child td {
+      border-bottom: none;
     }
 
     /* Stato normale del tasto CLOSE: Testo e bordo Rossi */

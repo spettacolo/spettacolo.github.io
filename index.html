@@ -464,6 +464,54 @@
     const expandTrigger = document.getElementById('expandTrigger');
     const expandedContent = document.getElementById('expandedContent');
 
+    // Funzione per calcolare il Checksum CRC16 (XMODEM)
+    function crc16(data) {
+        let crc = 0;
+        for (let i = 0; i < data.length; i++) {
+            crc ^= data[i] << 8;
+            for (let j = 0; j < 8; j++) {
+                if (crc & 0x8000) {
+                    crc = (crc << 1) ^ 0x1021;
+                } else {
+                    crc = crc << 1;
+                }
+            }
+        }
+        return (crc & 0xFFFF);
+    }
+
+    function convertRawToFriendly(rawAddress) {
+        // 1. Pulizia dell'indirizzo raw (rimuove "0:" e prende l'hash)
+        const parts = rawAddress.split(':');
+        const workchain = parseInt(parts[0]); // Solitamente 0
+        const hashHex = parts[1];
+        
+        // 2. Prepariamo i 34 byte iniziali
+        // Flag 0x51 = Non-bounceable, Mainnet
+        const bytes = new Uint8Array(36);
+        bytes[0] = 0x51; 
+        bytes[1] = workchain;
+        
+        // Inseriamo l'hash convertito da Hex a Bytes
+        for (let i = 0; i < 32; i++) {
+            bytes[i + 2] = parseInt(hashHex.substr(i * 2, 2), 16);
+        }
+        
+        // 3. Calcoliamo il Checksum sui primi 34 byte
+        const checksum = crc16(bytes.slice(0, 34));
+        bytes[34] = (checksum >> 8) & 0xff;
+        bytes[35] = checksum & 0xff;
+        
+        // 4. Convertiamo in Base64URL
+        let binary = '';
+        for (let b of bytes) binary += String.fromCharCode(b);
+        
+        return btoa(binary)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, ''); // Rimuove il padding '='
+    }
+
     // --- FUNZIONI DI RECUPERO DATI ---
     async function fetchFullBidHistory(domainName) {
         try {
@@ -475,16 +523,17 @@
 
             return rawBids.map(bid => {
                 const dateObj = new Date(bid.txTime * 1000);
+                const bidAddy = convertRawToFriendly(bid.bidder.address)
                 const bidderDisplayName = bid.bidder.name 
                     ? `@${bid.bidder.name}` 
-                    : `${bid.bidder.address.slice(0, 4)}...${bid.bidder.address.slice(-4)}`;
+                    : `${bidAddy.slice(0, 4)}...${bidAddy.slice(-4)}`;
 
                 return {
                     amount: bid.value / 1_000_000_000,
                     bidderDisplay: bidderDisplayName,
                     timestamp: dateObj.toLocaleString('it-IT', {
-                        day: '2-digit', month: '2-digit', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                        day: '2-digit', month: '2-digit',//, year: 'numeric',
+                        hour: '2-digit', minute: '2-digit',//, second: '2-digit'
                     }),
                     explorerUrl: `https://tonviewer.com/transaction/${bid.txHash}`
                 };
@@ -530,17 +579,19 @@
                     // Formattazione mittente (from)
                     let fromDisplay = 'Mint';
                     if (transfer.sender) {
+                        const fromAddy = convertRawToFriendly(transfer.sender.address);
                         fromDisplay = transfer.sender.name 
-                            ? `@${transfer.sender.name}` 
-                            : `${transfer.sender.address.slice(0, 6)}...${transfer.sender.address.slice(-4)}`;
+                            ? `${transfer.sender.name}` 
+                            : `${fromAddy.slice(0, 6)}...${fromAddy.slice(-4)}`;
                     }
 
                     // Formattazione destinatario (to)
                     let toDisplay = 'Unknown';
                     if (transfer.recipient) {
+                        const toAddy = convertRawToFriendly(transfer.recipient.address);
                         toDisplay = transfer.recipient.name 
                             ? `@${transfer.recipient.name}` 
-                            : `${transfer.recipient.address.slice(0, 6)}...${transfer.recipient.address.slice(-4)}`;
+                            : `${toAddy.slice(0, 6)}...${toAddy.slice(-4)}`;
                     }
 
                     return {

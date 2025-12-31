@@ -230,7 +230,7 @@
 
       <!-- Contenuto espanso -->
       <div class="expanded-content" id="expandedContent">
-        <p style="color: var(--text-alt); margin: 2rem 0 1rem;">Caricamento informazioni aggiuntive...</p>
+        <p style="color: var(--text-alt); margin: 2rem 0 1rem;">Loading additional information...</p>
       </div>
     </div>
   </div>
@@ -352,13 +352,34 @@
         // Qui potrai fare una fetch per caricare info extra sull'username
         // Esempio placeholder:
         expandedContent.innerHTML = `
-          <h3 style="color:var(--text); margin-bottom:1rem;">Informazioni su @${window.currentAuction.username}</h3>
-          <p style="color:var(--text-alt); line-height:1.6;">
-            • Dominio: ${window.currentAuction.domain}<br>
-            • Offerta attuale: ${formatTON(window.currentAuction.currentBidTon)} TON<br>
-            • Storico offerte: (da implementare)<br>
-            • Proprietario attuale: (da API)<br><br>
-            Altre informazioni in arrivo...
+          <h3 style="color:var(--text); margin-bottom:1.5rem; text-align: center;">
+            Informazioni su @${window.currentAuction.username}
+          </h3>
+          
+          <div style="
+            display: grid; 
+            grid-template-columns: auto auto; /* Le colonne si stringono sul contenuto */
+            justify-content: center;          /* Centra le colonne all'interno della griglia */
+            gap: 0.6rem 2rem;                 /* Spazio tra righe e tra etichetta/valore */
+            margin: 0 auto;                   /* Centra il blocco griglia nella modale */
+            color: var(--text-alt);
+            font-family: monospace;           /* Opzionale: per un look più 'data' */
+          ">
+            <div style="text-align: left;">• Domain:</div>
+            <div style="text-align: right; color: #ff00ff; font-weight: bold;">${window.currentAuction.domain}</div>
+            
+            <div style="text-align: left;">• Current offer:</div>
+            <div style="text-align: right; color: #ff00ff; font-weight: bold;">${formatTON(window.currentAuction.currentBidTon)} TON</div>
+            
+            <div style="text-align: left;">• Bid history:</div>
+            <div style="text-align: right; font-style: italic; opacity: 0.7;">(da implementare)</div>
+            
+            <div style="text-align: left;">• Ownership history:</div>
+            <div style="text-align: right; font-style: italic; opacity: 0.7;">(da API)</div>
+          </div>
+
+          <p style="text-align: center; color: var(--text-alt); margin-top: 1.5rem; font-size: 0.9rem;">
+            More information coming soon...
           </p>
         `;
       }
@@ -456,7 +477,7 @@
           auctionModalOverlay.classList.add('active');
           // Resetta lo stato espanso ogni volta che apri il modal
           detailModal.classList.remove('expanded');
-          expandedContent.innerHTML = '<p style="color: var(--text-alt); margin: 2rem 0 1rem;">Caricamento informazioni aggiuntive...</p>';
+          expandedContent.innerHTML = '<p style="color: var(--text-alt); margin: 2rem 0 1rem;">Loading additional information...</p>';
         });
 
         tbody.appendChild(row);

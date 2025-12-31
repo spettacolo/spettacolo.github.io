@@ -590,7 +590,7 @@
                     if (transfer.recipient) {
                         const toAddy = convertRawToFriendly(transfer.recipient.address);
                         toDisplay = transfer.recipient.name 
-                            ? `@${transfer.recipient.name}` 
+                            ? `${transfer.recipient.name}` 
                             : `${toAddy.slice(0, 6)}...${toAddy.slice(-4)}`;
                     }
 

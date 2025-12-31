@@ -223,7 +223,7 @@
       -webkit-user-select: text; /* Permette di selezionare gli indirizzi */
       user-select: text;
     }
-    
+
     /* Stato normale del tasto CLOSE: Testo e bordo Rossi */
     .btn-mini.btn-close {
       color: #ff4444;
@@ -244,6 +244,41 @@
     @keyframes neonGlowRed {
       0% { box-shadow: 0 0 5px rgba(255, 68, 68, 0.3); }
       100% { box-shadow: 0 0 15px rgba(255, 68, 68, 0.8); }
+    }
+
+    /* Impedisce al modal espanso di rompere il layout su schermi piccoli */
+    .modal.expanded {
+      max-width: 95vw !important; /* Leggermente più largo su mobile */
+      width: 95vw;
+      padding: 1.5rem; /* Riduciamo il padding per guadagnare spazio */
+    }
+
+    /* Contenitore responsivo per le tabelle history */
+    #bidBox, #ownerBox {
+      width: 100%;
+      overflow-x: auto; /* Attiva lo scroll solo sulla tabella se necessario */
+      -webkit-overflow-scrolling: touch;
+      margin-top: 1rem;
+    }
+
+    .history-table {
+      width: 100%;
+      min-width: 300px; /* Evita che la tabella diventi troppo minuscola */
+      table-layout: auto; /* Permette alla tabella di adattarsi al contenuto */
+    }
+
+    .history-table td {
+      padding: 8px 4px; /* Ridotto per mobile */
+      word-break: break-all; /* Forza il testo lungo (indirizzi) ad andare a capo */
+      font-size: 0.7rem; /* Leggermente più piccolo per stare nello schermo */
+    }
+
+    /* Ottimizzazione specifica per la griglia dettagli su mobile */
+    @media (max-width: 480px) {
+      .modal.expanded .expanded-content div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr auto !important; /* Forza due colonne strette */
+        gap: 0.8rem 1rem !important;
+      }
     }
   </style>
 </head>
@@ -576,14 +611,16 @@
             return;
         }
 
+        // Aggiungiamo un wrapper per lo scroll orizzontale sicuro
         let html = `
             <div style="margin-top: 1rem; border-top: 1px solid rgba(200, 0, 255, 0.2); padding-top: 1rem;">
                 <h4 style="color:var(--text); margin-bottom:0.8rem; font-size:0.9rem;">Ownership History</h4>
-                <table class="history-table">
-                    <thead>
-                        <tr><th>Date</th><th>From</th><th>To</th></tr>
-                    </thead>
-                    <tbody>
+                <div style="width: 100%; overflow-x: auto;">
+                    <table class="history-table">
+                        <thead>
+                            <tr><th>Date</th><th>From</th><th>To</th></tr>
+                        </thead>
+                        <tbody>
         `;
 
         history.forEach(row => {

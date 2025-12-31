@@ -296,6 +296,16 @@
       border-bottom: none;
     }
 
+    /* Rende le righe della history visibilmente cliccabili */
+    .history-table tbody tr {
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .history-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
     /* Stato normale del tasto CLOSE: Testo e bordo Rossi */
     .btn-mini.btn-close {
       color: #ff4444;
@@ -729,11 +739,10 @@
         `;
 
         history.forEach(bid => {
+            // La riga intera apre il link
             html += `
-                <tr>
-                    <td style="opacity:0.7;">
-                        <a href="${bid.explorerUrl}" target="_blank">${bid.timestamp} <span style="color:#ffffff;">↗</span></a>
-                    </td>
+                <tr onclick="window.open('${bid.explorerUrl}', '_blank')">
+                    <td style="opacity:0.7; color:#ffffff;">${bid.timestamp}</td>
                     <td style="color:#ffffff;">${bid.bidderDisplay}</td>
                     <td style="text-align:right; color:#ffffff; font-weight:bold;">${formatTON(bid.amount)} TON</td>
                 </tr>`;
@@ -761,11 +770,10 @@
         `;
 
         history.forEach(row => {
+            // La riga intera apre il link
             html += `
-                <tr>
-                    <td style="opacity:0.7;">
-                        <a href="${row.explorerUrl}" target="_blank">${row.date} <span style="color:#ffffff;">↗</span></a>
-                    </td>
+                <tr onclick="window.open('${row.explorerUrl}', '_blank')">
+                    <td style="opacity:0.7; color:#ffffff;">${row.date}</td>
                     <td style="color:#ffffff;">${row.from}</td>
                     <td style="color:#ffffff;">${row.to}</td>
                 </tr>`;

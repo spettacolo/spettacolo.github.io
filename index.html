@@ -254,7 +254,9 @@
     </svg>`;
     const API_URL = 'https://tonapi.io/v2/dns/auctions?tld=t.me';
     const MAX_ROWS = 500;
-    const TON_TO_USD = 1.68; // Prezzo attuale TON (29 Dic 2025)
+    let TON_TO_USD = 1.68; // Prezzo attuale TON (29 Dic 2025)
+    const TON_API_RATES = "https://tonapi.io/v2/rates?tokens=ton&currencies=usd";
+    const COINGECKO_API = "https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd";
     let auctions = [];
     let sortColumn = 'bid';
     let sortAsc = false;
@@ -384,6 +386,27 @@
         `;
       }
     });
+
+    async function updateTonPrice() {
+      try {
+          // 1. Tenta con TonAPI
+          const response = await fetch(TON_API_RATES);
+          if (!response.ok) throw new Error("TonAPI limit");
+          const data = await response.json();
+          TON_TO_USD = data.rates.TON.prices.USD;
+          console.log("Prezzo aggiornato da TonAPI:", TON_TO_USD);
+      } catch (err) {
+          try {
+              // 2. Fallback su CoinGecko
+              const response = await fetch(COINGECKO_API);
+              const data = await response.json();
+              TON_TO_USD = data['the-open-network'].usd;
+              console.log("Prezzo aggiornato da CoinGecko:", TON_TO_USD);
+          } catch (fallbackErr) {
+              console.error("Impossibile aggiornare il prezzo, uso fallback statico.");
+          }
+      }
+  }
 
     async function fetchAuctions() {
       try {
@@ -585,7 +608,13 @@
       }
     });
 
-    fetchAuctions();
+    // fetchAuctions();
+    async function init() {
+        await updateTonPrice(); // Recupera il prezzo reale
+        await fetchAuctions();  // Carica le aste e usa il prezzo appena ottenuto
+    }
+
+    init();
   </script>
 </body>
 </html>

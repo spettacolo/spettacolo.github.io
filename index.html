@@ -503,16 +503,6 @@
     }
 
     /* Fix perfetto per la griglia Details nel modal espanso */
-    .expanded-content .details-grid {
-      display: grid;
-      grid-template-columns: minmax(100px, auto) 1fr; /* Etichetta fissa, valore prende il resto */
-      gap: 1rem 1rem;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 0 1rem;
-      align-items: center;
-    }
-
     .expanded-content .details-label {
       color: var(--text-alt);
       font-size: 0.9rem;
@@ -522,7 +512,7 @@
       padding-right: 1rem;
     }
 
-    .expanded-content .details-value {
+    .expanded-content .details-value { /* usato solo sul dominio per prevenire username lunghi*/
       text-align: right;             /* Tutto a destra: importi, pulsanti, ecc. */
       color: #ffffff;
       font-weight: bold;
@@ -532,17 +522,8 @@
       line-height: 1.4;
     }
 
-    /* Pulsanti SHOW/CLOSE restano a destra */
-    .expanded-content .details-value button {
-      margin-left: auto;
-    }
-
     /* Su mobile: impila tutto ma mantiene l'allineamento */
     @media (max-width: 480px) {
-      .expanded-content .details-grid {
-        grid-template-columns: 1fr;
-        gap: 0.8rem;
-      }
       .expanded-content .details-label {
         text-align: left;
       }
@@ -1147,8 +1128,8 @@
                   font-family: 'JetBrains Mono', monospace;
                   font-size: 0.9rem;
               ">
-                  <div class="details-label">• Domain:</div>
-                  <div class="details-value">${window.currentAuction.domain}</div>
+                  <div style="text-align: left;">• Domain:</div>
+                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${window.currentAuction.domain}</div>
                   
                   <div style="text-align: left;">• Current bid:</div>
                   <div style="text-align: right; color: #ffffff; font-weight: bold;">${formatTON(window.currentAuction.currentBidTon)} TON</div>

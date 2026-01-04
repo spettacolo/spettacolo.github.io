@@ -502,6 +502,54 @@
       min-height: 200px;
     }
 
+    /* Fix layout griglia Details nel modal espanso */
+    .expanded-content .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* Due colonne uguali */
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem 1.5rem;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      box-sizing: border-box;
+    }
+
+    .expanded-content .details-label {
+      text-align: left;
+      color: var(--text-alt);
+      font-size: 0.9rem;
+      opacity: 0.9;
+      white-space: nowrap; /* Impedisce che "Domain:" vada a capo */
+    }
+
+    .expanded-content .details-value {
+      text-align: right;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 0.95rem;
+      word-break: break-all;     /* Username lungo va a capo correttamente */
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+
+    /* Su mobile: impila tutto in una colonna per maggiore leggibilità */
+    @media (max-width: 480px) {
+      .expanded-content .details-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+      }
+      
+      .expanded-content .details-label {
+        text-align: left;
+      }
+      
+      .expanded-content .details-value {
+        text-align: left;
+        margin-left: 1.5rem; /* Indenta leggermente il valore */
+      }
+    }
+
     .modal.expanded {
       max-width: 90vw !important;
       width: 90vw;
@@ -1083,11 +1131,8 @@
     expandTrigger.addEventListener('click', () => {
       detailModal.classList.toggle('expanded');
       
-      if (detailModal.classList.contains('expanded') && expandedContent.children.length === 1) { //@${window.currentAuction.username}
-          expandedContent.innerHTML = `
-              <h3 style="color:var(--text); margin-bottom:1.5rem; text-align: center;">Details</h3>
-              
-              <div style="
+      /* OLD DIV
+      <div style="
                   display: grid; 
                   grid-template-columns: auto auto; 
                   justify-content: center; 
@@ -1113,6 +1158,29 @@
                       <button onclick="manageSection('owner')" class="btn-mini">SHOW</button>
                   </div>
               </div>
+              */
+
+      if (detailModal.classList.contains('expanded') && expandedContent.children.length === 1) { //@${window.currentAuction.username}
+          expandedContent.innerHTML = `
+              <h3 style="color:var(--text); margin-bottom:1.5rem; text-align: center;">Details</h3>
+              
+              <div class="details-grid">
+                <div class="details-label">• Domain:</div>
+                <div class="details-value">${window.currentAuction.domain}</div>
+                
+                <div class="details-label">• Current bid:</div>
+                <div class="details-value">${formatTON(window.currentAuction.currentBidTon)} TON</div>
+                
+                <div class="details-label">• Bids:</div>
+                <div class="details-value" id="bidCtrl">
+                    <button onclick="manageSection('bid')" class="btn-mini">SHOW</button>
+                </div>
+                
+                <div class="details-label">• Owners:</div>
+                <div class="details-value" id="ownerCtrl">
+                    <button onclick="manageSection('owner')" class="btn-mini">SHOW</button>
+                </div>
+            </div>
 
               <div id="bidBox" style="display:none;"></div>
               <div id="ownerBox" style="display:none;"></div>

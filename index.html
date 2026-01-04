@@ -42,6 +42,92 @@
       text-shadow: var(--glow-divine); 
     }
 
+    /* NUOVA BARRA DI RICERCA */
+    .search-bar {
+      max-width: 600px;
+      margin: 2rem auto;
+      position: relative;
+      display: flex;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 1rem 1.5rem 1rem 4rem;
+      background: rgba(20, 15, 8, 0.8);
+      border: 1px solid var(--text);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1.1rem;
+      border-radius: 50px;
+      box-shadow: var(--border-glow);
+      transition: all 0.3s;
+    }
+    .search-bar input::placeholder {
+      color: var(--text-alt);
+      opacity: 0.8;
+    }
+    .search-bar input:focus {
+      outline: none;
+      box-shadow: var(--glow-divine);
+      background: rgba(30, 25, 15, 0.9);
+    }
+    .search-bar button {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.8;
+      transition: all 0.3s;
+    }
+    .search-bar button:hover {
+      opacity: 1;
+      filter: drop-shadow(var(--glow-divine));
+    }
+    .search-bar button svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--text);
+    }
+
+    #searchResult {
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background: var(--table-bg);
+      border: 1px solid var(--separator);
+      border-radius: 12px;
+      text-align: center;
+      max-width: 600px;
+      box-shadow: var(--border-glow);
+      display: none;
+    }
+    #searchResult h3 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      text-shadow: var(--glow-divine);
+    }
+    #searchResult .status {
+      font-size: 1.2rem;
+      margin: 1rem 0;
+      font-weight: 500;
+    }
+    #searchResult .available { color: #4caf50; }
+    #searchResult .auction { color: #ffeb3b; }
+    #searchResult .sale { color: #2196f3; }
+    #searchResult .taken { color: #ff4444; }
+    #searchResult .unavailable { color: #ff4444; }
+
+    @media (max-width: 768px) {
+      #searchResult {
+        margin: 1.5rem 0.5rem;
+      }
+    }
+
     .hero p { 
       font-size: 1.1rem; 
       font-weight: 300; 
@@ -99,6 +185,14 @@
         padding: 0.6rem 1.2rem; 
         font-size: 0.8rem; 
       } 
+      .search-bar {
+        margin: 1.5rem auto;
+        padding: 0 1rem;
+      }
+      .search-bar input {
+        padding: 0.9rem 1.2rem 0.9rem 3.8rem;
+        font-size: 1rem;
+      }
     }
 
     .platform { 
@@ -709,7 +803,21 @@
   <div class="container">
     <section class="hero">
       <h1>GOD</h1>
-      <p>Qui ci andrà una bella barra di ricerca <a href="/about">Learn more</a></p>
+      <!-- BARRA DI RICERCA AGGIUNTA -->
+      <form class="search-bar" id="searchForm">
+        <input type="text" id="searchInput" placeholder="Cerca un username specifico (es. @username)" autocomplete="off" required />
+        <button type="submit">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21.71 20.29l-5.4-5.39a8 8 0 1 0-1.42 1.42l5.4 5.39a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42zM10 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z"/>
+          </svg>
+        </button>
+      </form>
+      <!-- AREA RISULTATO RICERCA SINGOLA -->
+      <div id="searchResult"></div>
+      
+      <p><a href="/about">Learn more</a></p>
+      <button class="btn btn-fixed">Connect TON</button>
+      <!-- <p>Qui ci andrà una bella barra di ricerca <a href="/about">Learn more</a></p> -->
       <button class="btn btn-fixed">Connect TON</button>
     </section>
     <section class="platform">
@@ -873,6 +981,181 @@
     const detailModal = document.getElementById('detailModal');
     const expandTrigger = document.getElementById('expandTrigger');
     const expandedContent = document.getElementById('expandedContent');
+
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    const searchResult = document.getElementById('searchResult');
+
+    /**
+     * Controlla se un username Telegram (.t.me) è:
+     * - in asta
+     * - in vendita a prezzo fisso
+     * - taken
+     * - inesistente
+     */
+    async function checkUsernameSale(username) {
+      const clean = username.replace('@', '').toLowerCase();
+      const fragmentUrl = `https://fragment.com/?query=${encodeURIComponent(clean)}`;
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fragmentUrl)}`; // TODO: aggiungere la req alla mia api così da non dover usare allorigins e offuscare le req lato client
+
+      try {
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error('Fragment fetch failed');
+
+        const html = await res.text();
+
+        // Creiamo un DOM finto
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Troviamo la riga corretta (@username)
+        const rows = Array.from(doc.querySelectorAll('tr.tm-row-selectable'));
+        const row = rows.find(r => {
+          const value = r.querySelector('.table-cell-value.tm-value');
+          return value && value.textContent.trim().toLowerCase() === `@${clean}`;
+        });
+
+        if (!row) {
+          return { status: 'unavailable' };
+        }
+
+        // Stato (Sold / Taken / On auction / For sale)
+        const statusEl =
+          row.querySelector('.tm-status-unavail') ||
+          row.querySelector('.tm-status-taken') ||
+          row.querySelector('.tm-status-avail');
+
+        const statusText = statusEl?.textContent.trim().toLowerCase() || '';
+
+        // Prezzo (se presente)
+        const priceEl = row.querySelector('.icon-ton');
+        const priceTon = priceEl
+          ? Number(priceEl.textContent.replace(/,/g, '').trim())
+          : null;
+
+        /* ---- MAPPING STATI ---- */
+        if (statusText.includes('sold')) {
+          return {
+            status: 'sold',
+            priceTon
+          };
+        }
+
+        if (statusText.includes('taken')) {
+          return {
+            status: 'taken'
+          };
+        }
+
+        if (statusText.includes('auction')) {
+          return {
+            status: 'auction',
+            priceTon
+          };
+        }
+
+        if (statusText.includes('sale')) {
+          return {
+            status: 'sale',
+            priceTon
+          };
+        }
+
+        return { status: 'unavailable' };
+
+      } catch (err) {
+        console.error(err);
+        return { status: 'error' };
+      }
+    }
+
+    searchForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = searchInput.value.trim();
+      if (!username) return;
+
+      searchResult.style.display = 'block';
+      searchResult.innerHTML = '<p>Checking blockchain...</p>';
+
+      const result = await checkUsernameSale(username);
+
+      let html = `<h3>${username.startsWith('@') ? username : '@' + username}</h3>`;
+
+      switch (result.status) {
+        case 'auction':
+          html += `
+            <div class="status auction">
+              In asta<br>
+              <strong>${formatTON(result.priceTon)} TON</strong>
+            </div>`;
+          break;
+
+        case 'sale':
+          html += `
+            <div class="status sale">
+              In vendita a prezzo fisso<br>
+              <strong>${formatTON(result.priceTon)} TON</strong>
+            </div>`;
+          break;
+
+        case 'taken':
+          html += `
+            <div class="status taken">
+              Taken
+            </div>`;
+          break;
+
+        case 'unavailable':
+          html += `
+            <div class="status unavailable">
+              Non esistente
+            </div>`;
+          break;
+
+        case 'sold':
+          html += `
+            <div class="status taken">
+              Venduto<br>
+              <strong>${formatTON(result.priceTon)} TON</strong>
+            </div>`;
+          break;
+
+        default:
+          html += `
+            <div class="status unavailable">
+              Errore
+            </div>`;
+      }
+
+      searchResult.innerHTML = html;
+    });
+
+    function showSearchResult(username, status) {
+      let html = `<h3>@${username}</h3><div class="status ${status}">`;
+      switch (status) {
+        case 'auction':
+          html += 'In asta su Fragment';
+          break;
+        case 'sale':
+          html += 'In vendita a prezzo fisso';
+          break;
+        case 'taken':
+          html += 'Taken (già assegnato)';
+          break;
+        case 'unavailable':
+        default:
+          html += 'Unavailable';
+          break;
+      }
+      html += '</div>';
+
+      // Placeholder futuro per check Telegram "taken" classico (non collectible)
+      // if (status === 'taken') html += '<p style="margin-top:1rem; opacity:0.7;">(Da implementare: check via Telegram API se è un username base non collectible)</p>';
+
+      searchResult.innerHTML = html;
+      searchResult.style.display = 'block';
+    }
 
     // Funzione per calcolare il Checksum CRC16 (XMODEM)
     function crc16(data) {

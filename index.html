@@ -1136,21 +1136,30 @@
       if (detailModal.classList.contains('expanded') && expandedContent.children.length === 1) { //@${window.currentAuction.username}
           expandedContent.innerHTML = `
               <h3 style="color:var(--text); margin-bottom:1.5rem; text-align: center;">Details</h3>
-
-              <div class="details-grid">
+              
+              <div style="
+                  display: grid; 
+                  grid-template-columns: auto auto; 
+                  justify-content: center; 
+                  gap: 0.8rem 2rem; 
+                  margin: 0 auto; 
+                  color: var(--text-alt);
+                  font-family: 'JetBrains Mono', monospace;
+                  font-size: 0.9rem;
+              ">
                   <div class="details-label">• Domain:</div>
                   <div class="details-value">${window.currentAuction.domain}</div>
-
-                  <div class="details-label">• Current bid:</div>
-                  <div class="details-value">${formatTON(window.currentAuction.currentBidTon)} TON</div>
-
-                  <div class="details-label">• Bids:</div>
-                  <div class="details-value" id="bidCtrl">
+                  
+                  <div style="text-align: left;">• Current bid:</div>
+                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${formatTON(window.currentAuction.currentBidTon)} TON</div>
+                  
+                  <div style="text-align: left; display: flex; align-items: center;">• Bids:</div>
+                  <div style="text-align: right;" id="bidCtrl">
                       <button onclick="manageSection('bid')" class="btn-mini">SHOW</button>
                   </div>
-
-                  <div class="details-label">• Owners:</div>
-                  <div class="details-value" id="ownerCtrl">
+                  
+                  <div style="text-align: left; display: flex; align-items: center;">• Owners:</div>
+                  <div style="text-align: right;" id="ownerCtrl">
                       <button onclick="manageSection('owner')" class="btn-mini">SHOW</button>
                   </div>
               </div>

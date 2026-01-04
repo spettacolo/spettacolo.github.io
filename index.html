@@ -502,51 +502,53 @@
       min-height: 200px;
     }
 
-    /* Fix layout griglia Details nel modal espanso */
+    /* Fix perfetto per la griglia Details nel modal espanso */
     .expanded-content .details-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr; /* Due colonne uguali */
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem 1.5rem;
+      grid-template-columns: minmax(100px, auto) 1fr; /* Etichetta fissa, valore prende il resto */
+      gap: 1rem 1rem;
       max-width: 600px;
       margin: 0 auto;
       padding: 0 1rem;
-      box-sizing: border-box;
+      align-items: center;
     }
 
     .expanded-content .details-label {
-      text-align: left;
       color: var(--text-alt);
       font-size: 0.9rem;
       opacity: 0.9;
-      white-space: nowrap; /* Impedisce che "Domain:" vada a capo */
+      white-space: nowrap;           /* Non va mai a capo */
+      text-align: left;
+      padding-right: 1rem;
     }
 
     .expanded-content .details-value {
-      text-align: right;
+      text-align: right;             /* Tutto a destra: importi, pulsanti, ecc. */
       color: #ffffff;
       font-weight: bold;
       font-size: 0.95rem;
-      word-break: break-all;     /* Username lungo va a capo correttamente */
+      word-break: break-all;         /* Solo qui l'username lungo va a capo */
       overflow-wrap: break-word;
-      max-width: 100%;
+      line-height: 1.4;
     }
 
-    /* Su mobile: impila tutto in una colonna per maggiore leggibilità */
+    /* Pulsanti SHOW/CLOSE restano a destra */
+    .expanded-content .details-value button {
+      margin-left: auto;
+    }
+
+    /* Su mobile: impila tutto ma mantiene l'allineamento */
     @media (max-width: 480px) {
       .expanded-content .details-grid {
         grid-template-columns: 1fr;
         gap: 0.8rem;
       }
-      
       .expanded-content .details-label {
         text-align: left;
       }
-      
       .expanded-content .details-value {
-        text-align: left;
-        margin-left: 1.5rem; /* Indenta leggermente il valore */
+        text-align: right;
+        margin-left: 0;
       }
     }
 
@@ -1131,56 +1133,27 @@
     expandTrigger.addEventListener('click', () => {
       detailModal.classList.toggle('expanded');
       
-      /* OLD DIV
-      <div style="
-                  display: grid; 
-                  grid-template-columns: auto auto; 
-                  justify-content: center; 
-                  gap: 0.8rem 2rem; 
-                  margin: 0 auto; 
-                  color: var(--text-alt);
-                  font-family: 'JetBrains Mono', monospace;
-                  font-size: 0.9rem;
-              ">
-                  <div style="text-align: left;">• Domain:</div>
-                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${window.currentAuction.domain}</div>
-                  
-                  <div style="text-align: left;">• Current bid:</div>
-                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${formatTON(window.currentAuction.currentBidTon)} TON</div>
-                  
-                  <div style="text-align: left; display: flex; align-items: center;">• Bids:</div>
-                  <div style="text-align: right;" id="bidCtrl">
-                      <button onclick="manageSection('bid')" class="btn-mini">SHOW</button>
-                  </div>
-                  
-                  <div style="text-align: left; display: flex; align-items: center;">• Owners:</div>
-                  <div style="text-align: right;" id="ownerCtrl">
-                      <button onclick="manageSection('owner')" class="btn-mini">SHOW</button>
-                  </div>
-              </div>
-              */
-
       if (detailModal.classList.contains('expanded') && expandedContent.children.length === 1) { //@${window.currentAuction.username}
           expandedContent.innerHTML = `
               <h3 style="color:var(--text); margin-bottom:1.5rem; text-align: center;">Details</h3>
-              
+
               <div class="details-grid">
-                <div class="details-label">• Domain:</div>
-                <div class="details-value">${window.currentAuction.domain}</div>
-                
-                <div class="details-label">• Current bid:</div>
-                <div class="details-value">${formatTON(window.currentAuction.currentBidTon)} TON</div>
-                
-                <div class="details-label">• Bids:</div>
-                <div class="details-value" id="bidCtrl">
-                    <button onclick="manageSection('bid')" class="btn-mini">SHOW</button>
-                </div>
-                
-                <div class="details-label">• Owners:</div>
-                <div class="details-value" id="ownerCtrl">
-                    <button onclick="manageSection('owner')" class="btn-mini">SHOW</button>
-                </div>
-            </div>
+                  <div class="details-label">• Domain:</div>
+                  <div class="details-value">${window.currentAuction.domain}</div>
+
+                  <div class="details-label">• Current bid:</div>
+                  <div class="details-value">${formatTON(window.currentAuction.currentBidTon)} TON</div>
+
+                  <div class="details-label">• Bids:</div>
+                  <div class="details-value" id="bidCtrl">
+                      <button onclick="manageSection('bid')" class="btn-mini">SHOW</button>
+                  </div>
+
+                  <div class="details-label">• Owners:</div>
+                  <div class="details-value" id="ownerCtrl">
+                      <button onclick="manageSection('owner')" class="btn-mini">SHOW</button>
+                  </div>
+              </div>
 
               <div id="bidBox" style="display:none;"></div>
               <div id="ownerBox" style="display:none;"></div>

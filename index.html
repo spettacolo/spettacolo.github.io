@@ -1092,13 +1092,19 @@
       const placeBtn = document.getElementById('openBidModal');
 
       // Salva dati per espansione e bid
+      let minNextBid;
+      if (status === 'auction') {
+          minNextBid = priceTon * 1.05;
+      } else {
+          minNextBid = priceTon;
+      }
       window.currentClean = clean;
       window.currentAuction = {
         domain: clean + '.t.me',
         type: status,
         priceTon: priceTon,
         currentBidTon: status === 'auction' ? priceTon : 0,
-        minNextBidTon: status === 'auction' ? priceTon * 1.05 : 0
+        minNextBidTon: minNextBid // status === 'auction' ? priceTon * 1.05 : 0
       };
 
       if (auctionItem) {
@@ -1119,7 +1125,7 @@
         placeBtn.textContent = 'Place Bid';
       } else if (status === 'available') {
         priceText = 'Minimum bid';
-        priceValue = priceTon * 1.05;
+        priceValue = priceTon;
         usdValue = priceValue * TON_TO_USD;
         placeBtn.textContent = 'Place Bid';
       } else if (status === 'sale') {
@@ -1636,18 +1642,18 @@
     confirmBidBtn.addEventListener('click', async () => {
       const amountStr = bidAmountInput.value.trim();
       if (!amountStr) { 
-        bidError.textContent = 'Inserisci un importo'; 
+        bidError.textContent = 'Enter an amount'; 
         bidError.style.display = 'block'; 
         return; 
       }
       const amount = parseFloat(amountStr);
       if (isNaN(amount) || amount < window.currentAuction.minNextBidTon) {
-        bidError.textContent = `Minimo: ${formatTON(window.currentAuction.minNextBidTon)} TON`;
+        bidError.textContent = `Minimum: ${formatTON(window.currentAuction.minNextBidTon)} TON`;
         bidError.style.display = 'block';
         return;
       }
       if (!tonConnectUI.connected) { 
-        alert('Connetti prima il wallet TON!'); 
+        alert('Connect your TON wallet first!'); 
         return; 
       }
 

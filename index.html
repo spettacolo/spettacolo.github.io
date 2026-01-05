@@ -501,12 +501,6 @@
       transform: scale(1); 
     }
 
-    /*.modal h2 { 
-      font-size: 2rem; 
-      margin-bottom: 1rem; 
-      color: var(--text); 
-      text-shadow: var(--glow-divine); 
-    }*/
     .modal h2 {
       font-size: clamp(1.6rem, 6vw, 2.2rem);
       margin-bottom: 1rem;
@@ -812,12 +806,11 @@
           </svg>
         </button>
       </form>
-      <!-- AREA RISULTATO RICERCA SINGOLA -->
+      <!-- AREA RISULTATO RICERCA SINGOLA (ora non più usata visivamente, ma tenuta per compatibilità) -->
       <div id="searchResult"></div>
       
       <p><a href="/about">Learn more</a></p>
       <button class="btn btn-fixed">Connect TON</button>
-      <!-- <p>Qui ci andrà una bella barra di ricerca <a href="/about">Learn more</a></p> -->
       <button class="btn btn-fixed">Connect TON</button>
     </section>
     <section class="platform">
@@ -890,7 +883,7 @@
     </svg>`;
     const API_URL = 'https://tonapi.io/v2/dns/auctions?tld=t.me';
     const MAX_ROWS = 500;
-    let TON_TO_USD = 1.68; // Prezzo attuale TON (29 Dic 2025)
+    let TON_TO_USD = 1.68;
     const TON_API_RATES = "https://tonapi.io/v2/rates?tokens=ton&currencies=usd";
     const COINGECKO_API = "https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd";
     let auctions = [];
@@ -905,9 +898,9 @@
       }
     });
 
-    // TON Connect corretto dal CDN
+    // TON Connect
     const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-      manifestUrl: 'https://tonconnect-sdk-demo-dapp.vercel.app/tonconnect-manifest.json', // Cambia con il tuo quando pronto
+      manifestUrl: 'https://tonconnect-sdk-demo-dapp.vercel.app/tonconnect-manifest.json',
     });
 
     tonConnectUI.uiOptions = {
@@ -970,7 +963,6 @@
       }
     });
 
-    // Rimuovi blur quando modal si chiude
     tonConnectUI.onModalStateChange(state => {
       if (!state.status || state.status === 'closed') {
         document.body.classList.remove('ton-modal-open');
@@ -996,7 +988,7 @@
     async function checkUsernameSale(username) {
       const clean = username.replace('@', '').toLowerCase();
       const fragmentUrl = `https://fragment.com/?query=${encodeURIComponent(clean)}`;
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fragmentUrl)}`; // TODO: aggiungere la req alla mia api così da non dover usare allorigins e offuscare le req lato client
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fragmentUrl)}`;
 
       try {
         const res = await fetch(proxyUrl);
@@ -1004,11 +996,9 @@
 
         const html = await res.text();
 
-        // Creiamo un DOM finto
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
-        // Troviamo la riga corretta (@username)
         const rows = Array.from(doc.querySelectorAll('tr.tm-row-selectable'));
         const row = rows.find(r => {
           const value = r.querySelector('.table-cell-value.tm-value');
@@ -1019,7 +1009,6 @@
           return { status: 'unavailable' };
         }
 
-        // Stato (Sold / Taken / On auction / For sale)
         const statusEl =
           row.querySelector('.tm-status-unavail') ||
           row.querySelector('.tm-status-taken') ||
@@ -1027,38 +1016,25 @@
 
         const statusText = statusEl?.textContent.trim().toLowerCase() || '';
 
-        // Prezzo (se presente)
         const priceEl = row.querySelector('.icon-ton');
         const priceTon = priceEl
           ? Number(priceEl.textContent.replace(/,/g, '').trim())
           : null;
 
-        /* ---- MAPPING STATI ---- */
         if (statusText.includes('sold')) {
-          return {
-            status: 'sold',
-            priceTon
-          };
+          return { status: 'sold', priceTon };
         }
 
         if (statusText.includes('taken')) {
-          return {
-            status: 'taken'
-          };
+          return { status: 'taken' };
         }
 
         if (statusText.includes('auction')) {
-          return {
-            status: 'auction',
-            priceTon
-          };
+          return { status: 'auction', priceTon };
         }
 
         if (statusText.includes('sale')) {
-          return {
-            status: 'sale',
-            priceTon
-          };
+          return { status: 'sale', priceTon };
         }
 
         return { status: 'unavailable' };
@@ -1069,95 +1045,96 @@
       }
     }
 
+    // NUOVA LOGICA DI RICERCA: apre direttamente il modal (come click su tabella)
     searchForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const username = searchInput.value.trim();
-      if (!username) return;
+      const rawInput = searchInput.value.trim();
+      if (!rawInput) return;
 
-      searchResult.style.display = 'block';
-      searchResult.innerHTML = '<p>Checking blockchain...</p>';
+      const username = rawInput.startsWith('@') ? rawInput : '@' + rawInput;
+      const clean = rawInput.replace(/^@/, '').toLowerCase();
 
-      const result = await checkUsernameSale(username);
+      searchResult.style.display = 'none';
 
-      let html = `<h3>${username.startsWith('@') ? username : '@' + username}</h3>`;
+      let auctionItem = auctions.find(item => {
+        const domainLower = (item.domain || '').toLowerCase();
+        return domainLower.includes(clean + '.t.me') || domainLower.includes(clean);
+      });
 
-      switch (result.status) {
-        case 'auction':
-          html += `
-            <div class="status auction">
-              In asta<br>
-              <strong>${formatTON(result.priceTon)} TON</strong>
-            </div>`;
-          break;
+      let status = auctionItem ? 'auction' : null;
+      let priceTon = 0;
 
-        case 'sale':
-          html += `
-            <div class="status sale">
-              In vendita a prezzo fisso<br>
-              <strong>${formatTON(result.priceTon)} TON</strong>
-            </div>`;
-          break;
-
-        case 'taken':
-          html += `
-            <div class="status taken">
-              Taken
-            </div>`;
-          break;
-
-        case 'unavailable':
-          html += `
-            <div class="status unavailable">
-              Non esistente
-            </div>`;
-          break;
-
-        case 'sold':
-          html += `
-            <div class="status taken">
-              Venduto<br>
-              <strong>${formatTON(result.priceTon)} TON</strong>
-            </div>`;
-          break;
-
-        default:
-          html += `
-            <div class="status unavailable">
-              Errore
-            </div>`;
+      if (auctionItem) {
+        priceTon = auctionItem.price / 1_000_000_000;
+      } else {
+        const scrapeResult = await checkUsernameSale(rawInput);
+        status = scrapeResult.status;
+        priceTon = scrapeResult.priceTon || 0;
       }
 
-      searchResult.innerHTML = html;
+      // Apri il modal
+      const overlay = document.getElementById('auctionModal');
+      overlay.classList.add('active');
+      detailModal.classList.remove('expanded');
+      expandedContent.innerHTML = '<p style="color: var(--text-alt); margin: 2rem 0 1rem;">Loading additional information...</p>';
+
+      document.getElementById('modalUsername').textContent = username;
+
+      const minBidDiv = document.querySelector('#detailModal .min-bid');
+      const placeBtn = document.getElementById('openBidModal');
+
+      // Salva dati per espansione e bid
+      window.currentClean = clean;
+      window.currentAuction = {
+        domain: clean + '.t.me',
+        type: status,
+        priceTon: priceTon,
+        currentBidTon: status === 'auction' ? priceTon : 0,
+        minNextBidTon: status === 'auction' ? priceTon * 1.05 : 0
+      };
+
+      if (auctionItem) {
+        window.currentAuction.domain = auctionItem.domain || clean + '.t.me';
+      }
+
+      window.currentUsernameType = status;
+
+      // VISTA INIZIALE DEL MODAL (prezzo/status corretto)
+      let priceText = '';
+      let priceValue = 0;
+      let usdValue = 0;
+
+      if (status === 'auction') {
+        priceText = 'Minimum next bid';
+        priceValue = priceTon * 1.05;
+        usdValue = priceValue * TON_TO_USD;
+        placeBtn.textContent = 'Place Bid';
+      } else if (status === 'sale') {
+        priceText = 'Price';
+        priceValue = priceTon;
+        usdValue = priceValue * TON_TO_USD;
+        placeBtn.textContent = 'Buy Now';
+      } else if (status === 'sold') {
+        priceText = 'Last sold for';
+        priceValue = priceTon;
+        usdValue = priceValue * TON_TO_USD;
+        placeBtn.textContent = 'View on Fragment';
+      } else if (status === 'taken') {
+        minBidDiv.style.display = 'none';
+        placeBtn.textContent = 'View on Fragment';
+      } else { // unavailable
+        minBidDiv.style.display = 'none';
+        placeBtn.textContent = 'Check on Fragment';
+      }
+
+      if (priceText) {
+        minBidDiv.innerHTML = `${priceText}: <strong>${formatTON(priceValue)}</strong> TON
+          <div style="font-size:0.9rem;opacity:0.8;margin-top:0.4rem;">(~ $${formatTON(usdValue)})</div>`;
+        minBidDiv.style.display = 'block';
+      }
     });
 
-    function showSearchResult(username, status) {
-      let html = `<h3>@${username}</h3><div class="status ${status}">`;
-      switch (status) {
-        case 'auction':
-          html += 'In asta su Fragment';
-          break;
-        case 'sale':
-          html += 'In vendita a prezzo fisso';
-          break;
-        case 'taken':
-          html += 'Taken (già assegnato)';
-          break;
-        case 'unavailable':
-        default:
-          html += 'Unavailable';
-          break;
-      }
-      html += '</div>';
-
-      // Placeholder futuro per check Telegram "taken" classico (non collectible)
-      // if (status === 'taken') html += '<p style="margin-top:1rem; opacity:0.7;">(Da implementare: check via Telegram API se è un username base non collectible)</p>';
-
-      searchResult.innerHTML = html;
-      searchResult.style.display = 'block';
-    }
-
-    // Funzione per calcolare il Checksum CRC16 (XMODEM)
     function crc16(data) {
         let crc = 0;
         for (let i = 0; i < data.length; i++) {
@@ -1174,38 +1151,31 @@
     }
 
     function convertRawToFriendly(rawAddress) {
-        // 1. Pulizia dell'indirizzo raw (rimuove "0:" e prende l'hash)
         const parts = rawAddress.split(':');
-        const workchain = parseInt(parts[0]); // Solitamente 0
+        const workchain = parseInt(parts[0]);
         const hashHex = parts[1];
         
-        // 2. Prepariamo i 34 byte iniziali
-        // Flag 0x51 = Non-bounceable, Mainnet
         const bytes = new Uint8Array(36);
         bytes[0] = 0x51; 
         bytes[1] = workchain;
         
-        // Inseriamo l'hash convertito da Hex a Bytes
         for (let i = 0; i < 32; i++) {
             bytes[i + 2] = parseInt(hashHex.substr(i * 2, 2), 16);
         }
         
-        // 3. Calcoliamo il Checksum sui primi 34 byte
         const checksum = crc16(bytes.slice(0, 34));
         bytes[34] = (checksum >> 8) & 0xff;
         bytes[35] = checksum & 0xff;
         
-        // 4. Convertiamo in Base64URL
         let binary = '';
         for (let b of bytes) binary += String.fromCharCode(b);
         
         return btoa(binary)
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
-            .replace(/=+$/, ''); // Rimuove il padding '='
+            .replace(/=+$/, '');
     }
 
-    // --- FUNZIONI DI RECUPERO DATI ---
     async function fetchFullBidHistory(domainName) {
         try {
             const cleanDomain = domainName.replace('@', '').trim();
@@ -1216,7 +1186,7 @@
 
             return rawBids.map(bid => {
                 const dateObj = new Date(bid.txTime * 1000);
-                const bidAddy = convertRawToFriendly(bid.bidder.address)
+                const bidAddy = convertRawToFriendly(bid.bidder.address);
                 const bidderDisplayName = bid.bidder.name 
                     ? `${bid.bidder.name}` 
                     : `${bidAddy.slice(0, 4)}...${bidAddy.slice(-4)}`;
@@ -1225,8 +1195,8 @@
                     amount: bid.value / 1_000_000_000,
                     bidderDisplay: bidderDisplayName,
                     timestamp: dateObj.toLocaleString('it-IT', {
-                        day: '2-digit', month: '2-digit',//, year: 'numeric',
-                        hour: '2-digit', minute: '2-digit',//, second: '2-digit'
+                        day: '2-digit', month: '2-digit',
+                        hour: '2-digit', minute: '2-digit',
                     }),
                     explorerUrl: `https://tonviewer.com/transaction/${bid.txHash}`
                 };
@@ -1240,28 +1210,22 @@
     async function fetchOwnershipHistory(domainName) {
         try {
             const cleanDomain = domainName.replace('@', '').trim();
-            // Assicuriamoci che il dominio finisca con .t.me per la ricerca DNS
             const fullDomain = cleanDomain.endsWith('.t.me') ? cleanDomain : `${cleanDomain}.t.me`;
 
-            // 1. Otteniamo i dati del DNS per trovare l'indirizzo reale dell'NFT
             const dnsRes = await fetch(`https://tonapi.io/v2/dns/${fullDomain}`);
             const dnsData = await dnsRes.json();
             
-            // L'indirizzo dell'NFT è in .item.address (come visto nel tuo JSON)
             const nftAddress = dnsData.item?.address;
 
             if (!nftAddress) {
-                console.error("NFT Address non trovato per:", fullDomain);
                 return [];
             }
 
-            // 2. Usiamo l'endpoint specifico per la history degli NFT
             const response = await fetch(`https://tonapi.io/v2/nfts/${nftAddress}/history?limit=100`);
             const result = await response.json();
             
             if (!result.events) return [];
 
-            // 3. Mappiamo gli eventi cercando NftItemTransfer
             return result.events
                 .filter(event => event.actions.some(a => a.type === 'NftItemTransfer'))
                 .map(event => {
@@ -1269,7 +1233,6 @@
                     const transfer = action.NftItemTransfer;
                     const dateObj = new Date(event.timestamp * 1000);
                     
-                    // Formattazione mittente (from)
                     let fromDisplay = 'Mint';
                     if (transfer.sender) {
                         const fromAddy = convertRawToFriendly(transfer.sender.address);
@@ -1278,7 +1241,6 @@
                             : `${fromAddy.slice(0, 6)}...${fromAddy.slice(-4)}`;
                     }
 
-                    // Formattazione destinatario (to)
                     let toDisplay = 'Unknown';
                     if (transfer.recipient) {
                         const toAddy = convertRawToFriendly(transfer.recipient.address);
@@ -1289,7 +1251,7 @@
 
                     return {
                         date: dateObj.toLocaleString('it-IT', {
-                            day: '2-digit', month: '2-digit',// year: 'numeric',
+                            day: '2-digit', month: '2-digit',
                             hour: '2-digit', minute: '2-digit'
                         }),
                         from: fromDisplay,
@@ -1302,8 +1264,6 @@
             return [];
         }
     }
-
-    // --- LOGICA DI GESTIONE SEZIONI (SHOW/CLOSE) ---
 
     async function manageSection(type) {
         const box = document.getElementById(type + 'Box');
@@ -1318,7 +1278,6 @@
         box.innerHTML = `<p style="text-align:center; opacity:0.5; font-size:0.8rem; padding: 1.5rem;">Loading...</p>`;
         box.style.display = 'block';
         
-        // AGGIUNTO: Classe 'btn-close' per gestire i colori via CSS
         ctrl.innerHTML = `<button onclick="manageSection('${type}')" class="btn-mini btn-close">CLOSE</button>`;
 
         if (type === 'bid') {
@@ -1330,7 +1289,6 @@
         }
     }
 
-    // --- FUNZIONI DI RENDERING TABELLE ---
     function renderHistoryTable(history) {
         const container = document.getElementById('bidBox');
         if (history.length === 0) {
@@ -1350,7 +1308,6 @@
         `;
 
         history.forEach(bid => {
-            // La riga intera apre il link
             html += `
                 <tr onclick="window.open('${bid.explorerUrl}', '_blank')">
                     <td style="opacity:0.7; color:#ffffff;">${bid.timestamp}</td>
@@ -1381,7 +1338,6 @@
         `;
 
         history.forEach(row => {
-            // La riga intera apre il link
             html += `
                 <tr onclick="window.open('${row.explorerUrl}', '_blank')">
                     <td style="opacity:0.7; color:#ffffff;">${row.date}</td>
@@ -1393,11 +1349,34 @@
         container.innerHTML = html;
     }
 
-    // 3. Listener aggiornato con il pulsante nella griglia
     expandTrigger.addEventListener('click', () => {
       detailModal.classList.toggle('expanded');
       
-      if (detailModal.classList.contains('expanded') && expandedContent.children.length === 1) { //@${window.currentAuction.username}
+      if (detailModal.classList.contains('expanded') && expandedContent.children.length === 1) {
+          const auction = window.currentAuction || {};
+          const type = auction.type || 'unavailable';
+          const priceTon = auction.priceTon || 0;
+          const currentBidTon = auction.currentBidTon || 0;
+
+          let statusText = 'Unknown';
+          if (type === 'auction') statusText = 'In Auction';
+          else if (type === 'sale') statusText = 'For Sale';
+          else if (type === 'sold') statusText = 'Sold';
+          else if (type === 'taken') statusText = 'Taken';
+          else statusText = 'Available';
+
+          let currentLabel = 'Current bid:';
+          let currentValue = 'N/A';
+          if (type === 'auction' && currentBidTon > 0) {
+            currentValue = formatTON(currentBidTon) + ' TON';
+          } else if (type === 'sale' && priceTon > 0) {
+            currentLabel = 'Price:';
+            currentValue = formatTON(priceTon) + ' TON';
+          } else if (type === 'sold' && priceTon > 0) {
+            currentLabel = 'Last sold:';
+            currentValue = formatTON(priceTon) + ' TON';
+          }
+
           expandedContent.innerHTML = `
               <h3 style="color:var(--text); margin-bottom:1.5rem; text-align: center;">Details</h3>
               
@@ -1412,10 +1391,13 @@
                   font-size: 0.9rem;
               ">
                   <div style="text-align: left;">• Domain:</div>
-                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${window.currentAuction.domain}</div>
+                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${auction.domain || 'N/A'}</div>
                   
-                  <div style="text-align: left;">• Current bid:</div>
-                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${formatTON(window.currentAuction.currentBidTon)} TON</div>
+                  <div style="text-align: left;">• Status:</div>
+                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${statusText}</div>
+                  
+                  <div style="text-align: left;">• ${currentLabel}</div>
+                  <div style="text-align: right; color: #ffffff; font-weight: bold;">${currentValue}</div>
                   
                   <div style="text-align: left; display: flex; align-items: center;">• Bids:</div>
                   <div style="text-align: right;" id="bidCtrl">
@@ -1436,70 +1418,30 @@
               </p>
           `;
       }
-  });
+    });
 
     async function updateTonPrice() {
       try {
-        // 1. Tenta con TonAPI
         const response = await fetch(TON_API_RATES);
         if (!response.ok) throw new Error("TonAPI limit");
         const data = await response.json();
         TON_TO_USD = data.rates.TON.prices.USD;
-        console.log("Prezzo aggiornato da TonAPI:", TON_TO_USD);
       } catch (err) {
         try {
-          // 2. Fallback su CoinGecko
           const response = await fetch(COINGECKO_API);
           const data = await response.json();
           TON_TO_USD = data['the-open-network'].usd;
-          console.log("Prezzo aggiornato da CoinGecko:", TON_TO_USD);
         } catch (fallbackErr) {
           console.error("Impossibile aggiornare il prezzo, uso fallback statico.");
         }
       }
     }
 
-    /*
-    async function fetchFullBidHistory(domainName) {
-      try {
-        const cleanDomain = domainName.replace('@', '').trim();
-        const response = await fetch(`https://tonapi.io/v2/dns/${cleanDomain}/bids`);
-        if (!response.ok) throw new Error('Errore API');
-        
-        const result = await response.json();
-        const rawBids = result.data || [];
-
-        return rawBids.map(bid => {
-          const dateObj = new Date(bid.txTime * 1000);
-          
-          // Gestione Fallback: se non c'è il nome, accorciamo l'address
-          const bidderDisplayName = bid.bidder.name 
-            ? `@${bid.bidder.name}` 
-            : `${bid.bidder.address.slice(0, 4)}...${bid.bidder.address.slice(-4)}`;
-
-          return {
-            amount: bid.value / 1_000_000_000,
-            bidderDisplay: bidderDisplayName,
-            fullAddress: bid.bidder.address,
-            timestamp: dateObj.toLocaleString('it-IT', {
-                day: '2-digit', month: '2-digit', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
-            }),
-            explorerUrl: `https://tonviewer.com/transaction/${bid.txHash}`
-          };
-        });
-      } catch (error) {
-        console.error(error);
-        return [];
-      }
-    }*/
-
     async function fetchAuctions() {
       try {
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error('API error');
         let data = await response.json();
-        // Gestione vari formati risposta
         if (data.auctions) data = data.auctions;
         else if (data.data) data = data.data;
         else if (!Array.isArray(data)) data = [];
@@ -1512,11 +1454,7 @@
       }
     }
 
-    /*function formatTON(ton) {
-      return ton.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: ton < 1 ? 3 : 0 });
-    }*/
     function formatTON(ton) {
-      // Arrotonda per eccesso all'intero più vicino e mostra senza decimali
       return Math.ceil(ton).toString();
     }
 
@@ -1576,24 +1514,44 @@
         `;
 
         row.addEventListener('click', () => {
-          document.getElementById('modalUsername').textContent = '@' + username;
-          document.getElementById('modalMinBid').textContent = formatTON(minNextBidTon);
-          document.getElementById('modalMinUsd').textContent = formatTON(minNextBidUsd);
-          document.getElementById('bidModalUsername').textContent = '@' + username;
-          document.getElementById('bidModalMin').textContent = formatTON(minNextBidTon);
-          window.currentAuction = { username, domain: fullDomain, minNextBidTon, currentBidTon: ton };
-          const auctionModalOverlay = document.getElementById('auctionModal');
-          auctionModalOverlay.classList.add('active');
-          // Resetta lo stato espanso ogni volta che apri il modal
+          const overlay = document.getElementById('auctionModal');
+          overlay.classList.add('active');
           detailModal.classList.remove('expanded');
           expandedContent.innerHTML = '<p style="color: var(--text-alt); margin: 2rem 0 1rem;">Loading additional information...</p>';
+
+          document.getElementById('modalUsername').textContent = '@' + username;
+
+          const minBidDiv = document.querySelector('#detailModal .min-bid');
+          const placeBtn = document.getElementById('openBidModal');
+
+          const clean = username.toLowerCase();
+
+          window.currentClean = clean;
+          window.currentAuction = {
+            domain: fullDomain,
+            type: 'auction',
+            priceTon: ton,
+            currentBidTon: ton,
+            minNextBidTon: minNextBidTon
+          };
+          window.currentUsernameType = 'auction';
+
+          // Vista iniziale per auction (identica alla search)
+          const minNextUsd = minNextBidTon * TON_TO_USD;
+          minBidDiv.innerHTML = `Minimum next bid: <strong id="modalMinBid">${formatTON(minNextBidTon)}</strong> TON
+            <div style="font-size:0.9rem;opacity:0.8;margin-top:0.4rem;">(~ $<span id="modalMinUsd">${formatTON(minNextUsd)}</span>)</div>`;
+          minBidDiv.style.display = 'block';
+
+          document.getElementById('bidModalUsername').textContent = '@' + username;
+          document.getElementById('bidModalMin').textContent = formatTON(minNextBidTon);
+
+          placeBtn.textContent = 'Place Bid';
         });
 
         tbody.appendChild(row);
       });
     }
 
-    // Back to top, sorting, etc. (invariati)
     const backToTopButton = document.getElementById('backToTop');
     window.addEventListener('scroll', () => {
       if (window.innerWidth > 768) { backToTopButton.style.display = 'none'; return; }
@@ -1649,43 +1607,55 @@
       });
     });
 
+    // LOGICA UNIFICATA PER IL PULSANTE PRINCIPALE DEL MODAL (BID / REDIRECT)
     openBidBtn.addEventListener('click', () => {
-      auctionModal.classList.remove('active');
-      bidModal.classList.add('active');
-      bidAmountInput.focus();
+      if (window.currentUsernameType === 'auction') {
+        auctionModal.classList.remove('active');
+        bidModal.classList.add('active');
+        bidAmountInput.focus();
+      } else {
+        const clean = window.currentClean || '';
+        window.open(`https://fragment.com/username/${clean}`, '_blank');
+      }
     });
 
     confirmBidBtn.addEventListener('click', async () => {
       const amountStr = bidAmountInput.value.trim();
-      if (!amountStr) { bidError.textContent = 'Inserisci un importo'; bidError.style.display = 'block'; return; }
+      if (!amountStr) { 
+        bidError.textContent = 'Inserisci un importo'; 
+        bidError.style.display = 'block'; 
+        return; 
+      }
       const amount = parseFloat(amountStr);
       if (isNaN(amount) || amount < window.currentAuction.minNextBidTon) {
         bidError.textContent = `Minimo: ${formatTON(window.currentAuction.minNextBidTon)} TON`;
         bidError.style.display = 'block';
         return;
       }
-      if (!tonConnectUI.connected) { alert('Connetti prima il wallet TON!'); return; }
+      if (!tonConnectUI.connected) { 
+        alert('Connetti prima il wallet TON!'); 
+        return; 
+      }
 
-      const amountToFee = amount * 0.01;      // 1% fee
+      const amountToFee = amount * 0.01;
       const nanoFee = Math.floor(amountToFee * 1_000_000_000);
 
       try {
-        // === INSERISCI QUI GLI INDIRIZZI REALI E PAYLOAD SE NECESSARIO ===
-        // TODO: inviare req al server node per ottenere i messaggi così da "nascondere i dati"
         const messages = [
           {
-            address: "EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi", // Indirizzo principale del contratto
+            address: "EQCA14o1-VWhS2efqoh_9M1b_A9DtKTuoqfmkn83AbJzwnPi",
             amount: String(Math.floor(amount * 1_000_000_000)),
-            // payload: "te6cck..." // Se il contratto richiede un messaggio BoC specifico
           },
           {
-            address: "UQDB50s2jHBMMrq5VKt2ChdvDBJ3uqgsDnxrMckjNT1V2wVx", // fee address
+            address: "UQDB50s2jHBMMrq5VKt2ChdvDBJ3uqgsDnxrMckjNT1V2wVx",
             amount: String(nanoFee),
           }
-          // Aggiungi altri destinatari se serve (es. fee)
         ];
 
-        await tonConnectUI.sendTransaction({ validUntil: Math.floor(Date.now() / 1000) + 360, messages });
+        await tonConnectUI.sendTransaction({ 
+          validUntil: Math.floor(Date.now() / 1000) + 360, 
+          messages 
+        });
         alert('Bid inviata con successo!');
         bidModal.classList.remove('active');
         bidAmountInput.value = '';
@@ -1695,11 +1665,10 @@
       }
     });
 
-    // fetchAuctions();
+    // Inizializzazione
     async function init() {
-        await updateTonPrice(); // Recupera il prezzo reale
-        console.log(TON_TO_USD);
-        await fetchAuctions();  // Carica le aste e usa il prezzo appena ottenuto
+        await updateTonPrice(); 
+        await fetchAuctions();  
     }
 
     init();

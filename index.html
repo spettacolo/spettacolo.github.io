@@ -991,7 +991,7 @@
     async function checkUsernameSale(username) {
       const clean = username.replace('@', '').toLowerCase();
       const fragmentUrl = `https://fragment.com/?query=${encodeURIComponent(clean)}`;
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fragmentUrl)}`;
+      const proxyUrl = `https://fragment-search-api.vercel.app/api/proxy?query=${encodeURIComponent(fragmentUrl)}`; // https://api.allorigins.win/raw?url=
 
       try {
         const res = await fetch(proxyUrl);
